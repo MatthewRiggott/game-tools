@@ -1,0 +1,12 @@
+div.touchinputs {
+    width: 100%;
+    background-color: black;
+}
+
+div.touchinputs p{
+    color: whitesmoke;
+    font-weight: bold;
+    text-align: center;
+    font-size: 2em;
+    margin: 0;
+}
