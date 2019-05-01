@@ -4,13 +4,13 @@ var offset = { x: 0, y: 0 };
 var randomSelectedIndex = -1;
 var clearFlag = false;
 
-const circleRadius = 50;
-const COLORS = [ "F00", "00F", "0F0", "FF0", "F0F", "0FF", "6FC", "FC9", "CCC", "099", "909", "0F9" ];
+const circleRadius = 60;
+var COLORS = [ "F00", "00F", "0F0", "FF0", "F0F", "0FF", "6FC", "FC9", "CCC", "099", "909", "0F9" ];
 
 window.onload = function() {
     canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
-    
+    shuffle();
     resizeCanvas();
     canvas.addEventListener("touchstart", updateTouches, false);
     canvas.addEventListener("touchmove", updateTouches, false);
@@ -30,6 +30,13 @@ let resizeCanvas = () => {
     let rect = canvas.getBoundingClientRect();
     offset.x = rect.left;
     offset.y = rect.top;
+}
+
+let shuffle = () => {
+    for (let i = COLORS.length - 1; i > 0; i--) {
+        const rand = Math.floor(Math.random() * (i + 1));
+        [COLORS[i], COLORS[rand]] = [COLORS[rand], COLORS[i]]
+    }
 }
 
 let updateTouchCount = (count) => {
@@ -125,8 +132,10 @@ let drawTouches = () => {
 let clearState = () => {
     randomSelectedIndex = -1;
     ongoingTouches = [];
+    updateTouchCount(0);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    shuffle();
     clearFlag = false;
 }
 
