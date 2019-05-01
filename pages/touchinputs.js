@@ -1,6 +1,11 @@
 var canvas;
 var ctx;
 var offset = { x: 0, y: 0 };
+var randomSelectedIndex = -1;
+var clearFlag = false;
+
+const circleRadius = 50;
+const COLORS = [ "F00", "00F", "0F0", "FF0", "F0F", "0FF", "6FC", "FC9", "CCC", "099", "909", "0F9" ];
 
 window.onload = function() {
     canvas = document.getElementById("canvas");
@@ -38,86 +43,103 @@ let updateTouchCount = (count) => {
 }
 
 let selectRandomPlayer = (count) => {
-    if(count != ongoingClicks.length) {
+    if(count != ongoingTouches.length) {
         return;
     }
-    console.log("Selecting a player");
-    let selected = ongoingClicks[Math.floor(Math.random() * ongoingClicks.length)];
+    console.log("Selecting a player from array");
+    randomSelectedIndex = Math.floor(Math.random() * ongoingTouches.length);
+    let selected = ongoingTouches[randomSelectedIndex];
     console.debug(selected);
-    ongoingClicks = [selected];
-    clickIndex = 1;
-    drawClicks();
+    ongoingTouches = [selected];
+    
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.arc(selected.pageX, selected.pageY, circleRadius, 0, 2 * Math.PI, false);  // a circle at the start
+    ctx.fillStyle = selected.color;
+    ctx.fill();
 }
 
 let updateTouches = (evt) => {
     evt.preventDefault();
     console.log("touchstart.");
-    
-    var touches = evt.targetTouches;
-    var touchCount = touches.length;
-    updateTouchCount(touchCount);
-
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    for (var i = 0; i < touches.length; i++) {
-      console.log(`Touch ${i} being drawn.`);
-      var color = colorForTouch(touches[i]);
-      ctx.beginPath();
-      ctx.arc(touches[i].pageX - offset.x, touches[i].pageY - offset.y, 25, 0, 2 * Math.PI, false);  // a circle at the start
-      ctx.fillStyle = color;
-      ctx.fill();
+    if(randomSelectedIndex > -1 ) {
+        if(evt.targetTouches.length === 0) {
+            randomSelectedIndex = -1;
+            clearFlag = true;
+        }    
+        return;
     }
+
+    if(clearFlag) {
+        clearState();
+    }
+
+    ongoingTouches = [...evt.targetTouches].map(t => copyTouch(t));
+    drawTouches()
 }
 
-var clickIndex = 0;
-const COLORS = [ "F00", "00F", "0F0", "FF0", "F0F", "0FF", "6FC", "FC9", "CCC", "099", "909", "0F9" ];
+var ongoingTouches = [];
 
-var ongoingClicks = [];
+let getClickIndex = () => {
+    return ongoingTouches.length;
+}
 
 let clickAsTouch = (evt) => {
-    let click = copyClick(evt);
-    ongoingClicks.push(click);
-    clickIndex++;
-    drawClicks();
+    if(randomSelectedIndex > -1) {
+        clearState()
+        return;
+    }
+
+    let click = copyClickAsTouch(evt);
+    ongoingTouches.push(click);
+    drawTouches();
 }
 
 let handleRightClick = (evt) => {
     evt.preventDefault();
-    if(clickIndex <= 0) {
+    if(getClickIndex() <= 0) {
         return;
     }
-    ongoingClicks.pop();
-    clickIndex --;
-    drawClicks();
+    ongoingTouches.pop();
+    drawTouches();
 }
 
-let drawClicks = () => {
+let drawTouches = () => {
+    if(randomSelectedIndex > -1) {
+        return;
+    }
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    updateTouchCount(ongoingClicks.length);
-    for( let i = 0; i < ongoingClicks.length; i++)
+    updateTouchCount(ongoingTouches.length);
+    for( let i = 0; i < ongoingTouches.length; i++)
     {
-        let click = ongoingClicks[i];
+        let touch = ongoingTouches[i];
         ctx.beginPath();
-        ctx.arc(click.x, click.y, 25, 0, 2 * Math.PI, false);  // a circle at the start
-        ctx.fillStyle = click.color;
+        ctx.arc(touch.pageX, touch.pageY, circleRadius, 0, 2 * Math.PI, false);  // a circle at the start
+        ctx.fillStyle = touch.color;
         ctx.fill();
     }
 }
 
-let copyClick = (evt) => {
-    let click = {};
-    click.x = evt.clientX - offset.x;
-    click.y = evt.clientY - offset.y;
-    click.color = `#${COLORS[clickIndex % COLORS.length]}`;
-    click.id = clickIndex;
-    return click;
+let clearState = () => {
+    randomSelectedIndex = -1;
+    ongoingTouches = [];
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    clearFlag = false;
 }
 
-colorForTouch = (touch) => {
-    let color = `#${COLORS[touch.identifier % COLORS.length]}`;
-    console.log("color for touch with identifier " + touch.identifier + " = " + color);
+let copyClickAsTouch = (evt) => {
+    return { identifier: getClickIndex(), pageX: evt.clientX - offset.x, pageY: evt.clientY - offset.y, color: colorForTouch(getClickIndex()) };
+}
+
+let copyTouch = (touch) => {
+    return { identifier: touch.identifier, pageX: touch.pageX - offset.x, pageY: touch.pageY - offset.y, color: colorForTouch(touch.identifier) };
+}
+
+let colorForTouch = (id) => {
+    let color = `#${COLORS[id % COLORS.length]}`;
     return color;
 }
 
