@@ -14,7 +14,7 @@ self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(cacheName).then(function(cache) {
       console.log('[ServiceWorker] Caching app shell');
-      let cacheFilePaths = filesToCache.map(f => `/${repo}${f}`);
+      let cacheFilePaths = filesToCache.map(f => `/${repoPath}${f}`);
       return cache.addAll(cacheFilePaths);
     })
   );
