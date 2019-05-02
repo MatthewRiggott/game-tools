@@ -3,6 +3,7 @@ var ctx;
 var offset = { x: 0, y: 0 };
 var randomSelectedIndex = -1;
 var clearFlag = false;
+var touchCount = 0;
 
 const circleRadius = 60;
 var COLORS = [ "F00", "00F", "0F0", "FF0", "F0F", "0FF", "6FC", "FC9", "CCC", "099", "909", "0F9" ];
@@ -42,18 +43,17 @@ let shuffle = () => {
 let updateTouchCount = (count) => {
     let textElement = document.getElementById("touch-count");
     textElement.innerText = count;
-
-    if(count > 1) {
-        console.log("Selecting at random in 3 seconds");
-        window.setTimeout(() => selectRandomPlayer(count), 3000);
-    }
+    touchCount = count;
+    console.log("Selecting at random in 3 seconds");
+    debouncedSelectRandomPlayer(count);
 }
 
 let selectRandomPlayer = (count) => {
-    if(count != ongoingTouches.length) {
+    console.log("Select player method fired");
+    if(count != ongoingTouches.length || count <= 1) {
         return;
     }
-    console.log("Selecting a player from array");
+    console.log(`Selecting playing from ${count} available`);
     randomSelectedIndex = Math.floor(Math.random() * ongoingTouches.length);
     let selected = ongoingTouches[randomSelectedIndex];
     console.debug(selected);
@@ -118,7 +118,10 @@ let drawTouches = () => {
     }
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    updateTouchCount(ongoingTouches.length);
+
+    if(touchCount != ongoingTouches.length) {
+        updateTouchCount(ongoingTouches.length);
+    }
     for( let i = 0; i < ongoingTouches.length; i++)
     {
         let touch = ongoingTouches[i];
@@ -128,6 +131,19 @@ let drawTouches = () => {
         ctx.fill();
     }
 }
+
+let debounce = (func, wait) => {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        func.apply(this, args);
+      }, wait);
+    };
+}
+
+let debouncedResizeCanvas = debounce(resizeCanvas, 50);
+let debouncedSelectRandomPlayer = debounce(selectRandomPlayer, 3000);
 
 let clearState = () => {
     randomSelectedIndex = -1;
@@ -153,5 +169,5 @@ let colorForTouch = (id) => {
 }
 
 window.onresize = function() {
-    window.setTimeout(resizeCanvas(), 50);
+    debouncedResizeCanvas();
 }
