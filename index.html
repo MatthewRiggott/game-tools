@@ -14,6 +14,16 @@
     <script type="text/javascript" src="script.js" ></script>
 </head>
 <body>
+    <script>
+        let repo = "pwa-playground";
+        const isLocalRequest = (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "");
+        if(navigator.serviceWorker && !isLocalRequest) {
+            navigator.serviceWorker.register(`/${repo}/sw.js`, { scope: `/${repo}/`})
+            .then(function() {
+                console.log('Service Worker Registered');
+            });
+        }
+    </script>
     <h1>PWA Playground</h1>
 
     <ul>
