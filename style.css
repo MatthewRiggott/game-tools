@@ -10,3 +10,33 @@ div.touchinputs p{
     font-size: 2em;
     margin: 0;
 }
+
+.navigate {
+    position: absolute;
+    box-sizing: border-box;
+    bottom: 5px;
+    height: 60px;
+    width: calc(100% - 16px);
+    display: inline-block;
+}
+
+.navigate button {
+    background-color: aquamarine;
+    color: white;
+    height: 56px;
+    margin: 2px;
+    font-size: 2em;
+    padding: 0px 10px;
+    border-radius: 10px;
+    width: 40%;
+    max-width: 200px;
+}
+
+.navigate button:first-child {
+    float: left;
+}
+
+.navigate button:last-child {
+    float: right;
+}
+

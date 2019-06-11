@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>PWA Playground</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="../../icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../icons/favicon-16x16.png">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" type="text/css" href="../../style.css" />
+    <link rel="manifest" href="../../manifest.json">
+    <script type="text/javascript" src="turnpicker.js" ></script>
+</head>
+<body>
+  <h1>Turn Order Tools</h1>
+  <ul>
+      <li>
+          <h2><a href="turnpicker.html?turnpickeroption=firstPlayer">Turn Pickers</a></h2>
+          <p>First Player Only</p>
+      </li>
+      <li>
+          <h2><a href="turnpicker.html?turnpickeroption=allPlayers">Turn Pickers</a></h2>
+          <p>Randomize Turn Order for All Players</p>
+      </li>
+      <li>
+          <h2><a id="teamOptionsUrl" href="turnpicker.html?turnpickeroption=splitTeams&numberOfTeams=2">Turn Pickers</a></h2>
+          <p>Splits into Teams, use Arrows to change the number of teams</p>
+          <h2><div id="decrementTeams">&lt;&lt;</div></span> <span id="numberOfTeams">2</span> <div id="incrementTeams">&gt;&gt;</div></h2>
+      </li>
+  </ul>
+  <script>
+      function handleDecrement(e) {
+          e.preventDefault();
+          let teamCount = parseInt(document.getElementById("numberOfTeams").innerText);
+          if(teamCount > 2) {
+              teamCount--;
+          }
+          document.getElementById("numberOfTeams").innerText = teamCount;
+          document.getElementById("teamOptionsUrl").href = `turnpicker.html?turnpickeroption=splitTeams&numberOfTeams=${teamCount}`;
+      }
+
+      function handleIncrement(e) {
+          e.preventDefault();
+          let teamCount = parseInt(document.getElementById("numberOfTeams").innerText) + 1;
+          document.getElementById("numberOfTeams").innerText = teamCount;
+          document.getElementById("teamOptionsUrl").href = `turnpicker.html?turnpickeroption=splitTeams&numberOfTeams=${teamCount}`;
+      }
+
+      window.onload = function() {
+          document.getElementById("decrementTeams").addEventListener("click", handleDecrement);
+          document.getElementById("decrementTeams").addEventListener("touch", handleDecrement);
+          document.getElementById("incrementTeams").addEventListener("click", handleIncrement);
+          document.getElementById("incrementTeams").addEventListener("touch", handleIncrement);
+      }
+  </script>
+</body>
+</html>
