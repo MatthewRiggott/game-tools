@@ -1,3 +1,9 @@
+body {
+    background-color: black;
+    color: white;
+    font-size: 1.3em;
+}
+
 div.touchinputs {
     width: 100%;
     background-color: black;
@@ -9,6 +15,18 @@ div.touchinputs p{
     text-align: center;
     font-size: 2em;
     margin: 0;
+}
+
+.arrow-picker {
+    display: inline;
+}
+
+.arrow-picker > * {
+    float: left;
+}
+
+.clearfix {
+    clear: both !important;
 }
 
 .navigate {

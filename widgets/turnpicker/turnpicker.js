@@ -47,7 +47,7 @@ let setOptionsFromQuery = () => {
     if(selectedPickOption == turnPickerOptions.firstPlayerOnly) {
         pickFunc = selectRandomPlayer;
     } else if(selectedPickOption == turnPickerOptions.allPlayers) {
-        pickFunc = shuffleAllPlayers;
+        pickFunc = reorderAllPlayers;
     } else if (selectedPickOption == turnPickerOptions.splitTeams) {
         pickFunc = splitIntoTeams;
     } else { 
@@ -93,10 +93,7 @@ let shuffleColors = () => {
     COLORS = shuffle(COLORS);
 }
 
-let updateTouchCount = (count) => {
-    let textElement = document.getElementById("touch-count");
-    textElement.innerText = count;
-    touchCount = count;
+let updateTouchCount = () => {
     if(validate()) {
         handleTurnPick();
     }
@@ -109,7 +106,6 @@ let validate = () => {
         return ongoingTouches.length >= numberOfTeams;
     }
 }
-
 
 let selectRandomPlayer = () => {
 
@@ -128,7 +124,7 @@ let selectRandomPlayer = () => {
 }
 
 let reorderAllPlayers = () => {
-    const playerOrder = shuffleArray(ongoingTouches.length);
+    const playerOrder = shufflePlayers(ongoingTouches.length);
     
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -143,7 +139,7 @@ let reorderAllPlayers = () => {
         ctx.font = "4em Arial";
         ctx.textAlign = "center";
         ctx.fillStyle = "black";
-        ctx.fillText(selected.order + 1, selected.pageX, selected.pageY + 20);
+        ctx.fillText(selected.order + 1, selected.pageX, selected.pageY + 30);
     }
 }
 
@@ -254,9 +250,8 @@ let drawTouches = () => {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if(touchCount != ongoingTouches.length) {
-        updateTouchCount(ongoingTouches.length);
-    }
+    updateTouchCount(ongoingTouches.length);
+    
     for( let i = 0; i < ongoingTouches.length; i++)
     {
         let touch = ongoingTouches[i];
@@ -282,7 +277,7 @@ let debouncedResizeCanvas = debounce(resizeCanvas, 50);
 let clearState = () => {
     randomSelectedIndex = -1;
     ongoingTouches = [];
-    updateTouchCount(0);
+    updateTouchCount();
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     shuffleColors();
