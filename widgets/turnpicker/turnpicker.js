@@ -7,6 +7,8 @@ var touchCount = 0;
 var turnPickerParam = "turnpickeroption";
 
 const circleRadius = 60;
+const DELAY_TO_PICK = 3000;
+
 var COLORS = [ "F00", "00F", "0F0", "FF0", "F0F", "0FF", "6FC", "FC9", "CCC", "099", "909", "0F9" ];
 
 var selectedPickOption;
@@ -24,7 +26,7 @@ window.onload = function() {
     canvas = document.getElementById("canvas");
     ctx = canvas.getContext("2d");
     setOptionsFromQuery();
-    shuffle();
+    shuffleColors();
     resizeCanvas();
     canvas.addEventListener("touchstart", updateTouches, false);
     canvas.addEventListener("touchmove", updateTouches, false);
@@ -36,23 +38,27 @@ window.onload = function() {
 let setOptionsFromQuery = () => {
     const options = new URLSearchParams(window.location.search);
     if(options == null || options.get(turnPickerParam) == null) {
-        handleTurnPick = selectRandomPlayer;
-        return;
-    }
-
-    const option = options.get(turnPickerParam);
-    if(option == turnPickerOptions.firstPlayerOnly) {
-        handleTurnPick = selectRandomPlayer;
-    } else if(option == turnPickerOptions.allPlayers) {
-        handleTurnPick = shuffleAllPlayers;
-    } else if (option == turnPickerOptions.splitTeams) {
-        handleTurnPick = selectRandomPlayer;
+        selectedPickOption = turnPickerOptions.firstPlayerOnly
     } else {
-        handleTurnPick = selectRandomPlayer;
+        selectedPickOption = options.get(turnPickerParam);
     }
+    
+    let pickFunc;
+    if(selectedPickOption == turnPickerOptions.firstPlayerOnly) {
+        pickFunc = selectRandomPlayer;
+    } else if(selectedPickOption == turnPickerOptions.allPlayers) {
+        pickFunc = shuffleAllPlayers;
+    } else if (selectedPickOption == turnPickerOptions.splitTeams) {
+        pickFunc = splitIntoTeams;
+    } else { 
+        // default case should option not match a valid case
+        selectedPickOption = turnPickerOptions.firstPlayerOnly;
+        pickFunc = selectRandomPlayer;
+    }
+    handleTurnPick = debounce(pickFunc, DELAY_TO_PICK);
 
     if(selectedPickOption == turnPickerOptions.splitTeams) {
-        const teamCount = options.get("numberOfTeams");
+        const teamCount = parseInt(options.get("numberOfTeams"));
         if(teamCount == NaN || teamCount < 2) {
             numberOfTeams = 2;
         } else {
@@ -74,19 +80,34 @@ let resizeCanvas = () => {
     offset.y = rect.top;
 }
 
-let shuffle = () => {
-    for (let i = COLORS.length - 1; i > 0; i--) {
+let shuffle = (arr) => {
+    let copyArr = [...arr];
+    for (let i = copyArr.length - 1; i > 0; i--) {
         const rand = Math.floor(Math.random() * (i + 1));
-        [COLORS[i], COLORS[rand]] = [COLORS[rand], COLORS[i]]
+        [copyArr[i], copyArr[rand]] = [copyArr[rand], copyArr[i]]
     }
+    return copyArr;
+}
+
+let shuffleColors = () => {
+    COLORS = shuffle(COLORS);
 }
 
 let updateTouchCount = (count) => {
     let textElement = document.getElementById("touch-count");
     textElement.innerText = count;
     touchCount = count;
-    console.log("Selecting at random in 3 seconds");
-    debouncedSelectRandomPlayer();
+    if(validate()) {
+        handleTurnPick();
+    }
+}
+
+let validate = () => {
+    if(selectedPickOption != turnPickerOptions.splitTeams) {
+        return ongoingTouches.length >= 2;
+    } else {
+        return ongoingTouches.length >= numberOfTeams;
+    }
 }
 
 
@@ -106,7 +127,7 @@ let selectRandomPlayer = () => {
     ctx.fill();
 }
 
-let shuffleAllPlayers = () => {
+let reorderAllPlayers = () => {
     const playerOrder = shuffleArray(ongoingTouches.length);
     
     ctx.fillStyle = "black";
@@ -127,20 +148,58 @@ let shuffleAllPlayers = () => {
 }
 
 let splitIntoTeams = () => {
+    if(numberOfTeams >= ongoingTouches.count) {
+        if(numberOfTeams == ongoingTouches.count) {
+            reorderAllPlayers();
+        }
+        return;
+    }
 
+    // shuffle players, assign first $numberOfTeams players to a unique teams, divvying the remainder as evenly possible
+    const shuffledOrder = shufflePlayers(ongoingTouches.length);
+    const teams = new Array(numberOfTeams);
+
+    for(let i = 0; i < shuffledOrder.length; i ++) {
+        if(i < teams.length) {
+            let team = {};
+            team.players = [];
+            team.color = ongoingTouches[shuffledOrder[i]].color;
+            teams[i] = team;
+        }
+        teams[i % teams.length].players.push(ongoingTouches[shuffledOrder[i]]);
+    }
+
+    // select which team goes 'first', prefer teams with less players
+    const lowestTeamPlayerCount = teams[teams.length - 1].players.length; // team whom is decided last will have the lowest count
+    const totalTeamsWithLessPlayers = teams.filter(team => team.players.length == lowestTeamPlayerCount).length; // number of teams with fewer players
+    // randomly selected team of those with fewer players, index is mapped back to one within the teams array
+    const firstTeamIndex = Math.floor(Math.random() * totalTeamsWithLessPlayers) + (teams.length - totalTeamsWithLessPlayers);
+    
+    for(let i = 0; i < teams.length; i++) {
+        const team = teams[i];
+        const isFirst = i == firstTeamIndex;
+        for(let j = 0; j < team.players.length; j++) {
+            const touch = team.players[j];
+            ctx.beginPath();
+            ctx.fillStyle = team.color;
+            ctx.arc(touch.pageX, touch.pageY, circleRadius - 10, 0, 2 * Math.PI, false);  // a circle at the start
+            ctx.fill();
+            if(isFirst) {
+                ctx.font = "4em Arial";
+                ctx.textAlign = "center";
+                ctx.fillStyle = "black";
+                ctx.fillText(1, touch.pageX, touch.pageY + 20);
+            }
+        }
+    }
 }
 
-let shuffleArray = (arrLength) => {
+let shufflePlayers = (arrLength) => {
     let arr = new Array(arrLength);
     for(let i = 0; i < arr.length; i++) {
         arr[i] = i;
     }
-    // es6 fisher yates
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
+    return shuffle(arr);
 }
 
 let updateTouches = (evt) => {
@@ -219,7 +278,6 @@ let debounce = (func, wait) => {
 }
 
 let debouncedResizeCanvas = debounce(resizeCanvas, 50);
-let debouncedSelectRandomPlayer = debounce(selectRandomPlayer, 3000);
 
 let clearState = () => {
     randomSelectedIndex = -1;
@@ -227,7 +285,7 @@ let clearState = () => {
     updateTouchCount(0);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    shuffle();
+    shuffleColors();
     clearFlag = false;
 }
 
